@@ -1,0 +1,9 @@
+/client
+/migrations
+/node_modules
+/test
+/.env
+/.gitattributes
+/LICENSE
+/package-lock.json
+/truffle-config.js

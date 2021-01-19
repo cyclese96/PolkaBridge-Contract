@@ -32,7 +32,7 @@ contract PolkaBridgePresale {
 
         //init whitelist
         whitelist[owner] = true;
-        whitelist["0x59f5836DAe9977A5124C022C4B6F9b8d3f5d61DA"] = true;
+        whitelist[0x59f5836DAe9977A5124C022C4B6F9b8d3f5d61DA] = true;
     }
 
     function sendETHtoContract() public payable {

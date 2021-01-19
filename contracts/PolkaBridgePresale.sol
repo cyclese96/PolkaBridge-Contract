@@ -33,10 +33,11 @@ contract PolkaBridgePresale {
         //init whitelist
         whitelist[owner] = true;
         whitelist[0x59f5836DAe9977A5124C022C4B6F9b8d3f5d61DA] = true;
+        whitelist[0x778c5DCfA5082989868B969858963Fa3F697D847] = true;
     }
 
     function sendETHtoContract() public payable {
-        require(block.timestamp >= BeginDate, "Presale not start");
+        //require(block.timestamp >= BeginDate, "Presale not start");
         require(isWhitelisted(msg.sender), "You are not in whitelist");
 
         uint256 ethAmount = msg.value;

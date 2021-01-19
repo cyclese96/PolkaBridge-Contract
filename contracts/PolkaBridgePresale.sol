@@ -7,11 +7,16 @@ contract PolkaBridgePresale {
     using SafeMath for uint256;
     string public name = "PolkaBridge Presale Contract";
     address payable private owner;
-    
+
     PolkaBridge private polkaBridge;
     mapping(address => uint256) private _presaler;
-    
+    mapping(address => bool) whitelist;
+
     uint256 CONST_RATEPERETH;
+    uint256 BeginDate;
+    uint256 EndDate;
+    uint256 MinAllocation;
+    uint256 MaxAllocation;
 
     event logString(string value);
 
@@ -20,20 +25,26 @@ contract PolkaBridgePresale {
         owner = msg.sender;
 
         CONST_RATEPERETH = 100000;
+        BeginDate = 1611327600; //Friday, 22 January 2021 15PM UTC
+        EndDate = 1611934626; //Friday, 29 January 2021
+        MinAllocation = 200000000000000000; //0.2eth
+        MaxAllocation = 1000000000000000000; //1eth
+
+        //init whitelist
+        whitelist[owner] = true;
+        whitelist["0x59f5836DAe9977A5124C022C4B6F9b8d3f5d61DA"] = true;
     }
 
     function sendETHtoContract() public payable {
-         require(block.timestamp >= 1611327600, "Presale not start"); //Friday, 22 January 2021 15PM UTC
+        require(block.timestamp >= BeginDate, "Presale not start");
+        require(isWhitelisted(msg.sender), "You are not in whitelist");
 
         uint256 ethAmount = msg.value;
-        require(
-            ethAmount >= 200000000000000000,
-            "minimum contribute is 0.2ETH"
-        );
-        require(ethAmount <= 1000000000000000000, "maximum contribute is 1ETH");
+        require(ethAmount >= MinAllocation, "minimum contribute is 0.2ETH");
+        require(ethAmount <= MaxAllocation, "maximum contribute is 1ETH");
         _presaler[msg.sender] += ethAmount;
 
-        if (_presaler[msg.sender] > 1000000000000000000) {
+        if (_presaler[msg.sender] > MaxAllocation) {
             _presaler[msg.sender] -= ethAmount;
             revert("maximum contribute is 1ETH");
         }
@@ -51,13 +62,25 @@ contract PolkaBridgePresale {
             revert("not enough token for transaction");
         }
 
-      
         polkaBridge.transfer(msg.sender, tokenAmount);
     }
 
-
     function remainToken() public view returns (uint256) {
         return polkaBridge.balanceOf(address(this));
+    }
+
+    function addWhitelist(address add) public {
+        require(msg.sender == owner, "only owner can add whitelist");
+        whitelist[add] = true;
+    }
+
+    function removeWhitelist(address add) public {
+        require(msg.sender == owner, "only owner can add whitelist");
+        whitelist[add] = false;
+    }
+
+    function isWhitelisted(address add) public view returns (bool) {
+        return whitelist[add];
     }
 
     function withdrawFund() public {
@@ -76,7 +99,7 @@ contract PolkaBridgePresale {
 
     function burnRemaining() public {
         require(msg.sender == owner, "only owner can burn");
-        require(block.timestamp > 1611934626, "Presale not ended"); //Friday, 29 January 2021
+        require(block.timestamp > EndDate, "Presale not ended");
         polkaBridge.burn(remainToken());
     }
 }

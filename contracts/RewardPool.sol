@@ -19,11 +19,19 @@ contract RewardPool {
         return polkaBridge.balanceOf(address(this));
     }
 
-    function withdrawToken(address _addres, uint256 amount) public {
-
-        require(msg.sender == owner, "RewardPool: only owner can withdraw token");
+    ///withdraw token to pool reward
+    function withdrawToken(address poolAddress, uint256 amount) public {
+        require(
+            msg.sender == owner,
+            "RewardPool: only owner can withdraw token"
+        );
         require(amount > 0, "RewardPool: not enough balance");
+        require(amount <= tokenBalance(), "RewardPool: not enough balance");
+        require(
+            poolAddress != address(0),
+            "RewardPool: transfer to the zero address"
+        );
 
-        polkaBridge.transfer(_addres, amount);
+        polkaBridge.transfer(poolAddress, amount);
     }
 }

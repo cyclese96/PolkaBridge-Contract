@@ -11,7 +11,7 @@ contract PolkaBridge is ERC20, ERC20Detailed, ERC20Burnable {
         ERC20Detailed("PolkaBridge", "PBR", 18)
     {
         _deploy(msg.sender, initialSupply);
-        BeginExtract = 1615766400; //15 Mar 2021
+        BeginExtract = 1615766400; //15 Mar 2021 1615766400
     }
 
     function _caculateExtractAmount(uint256 amount)

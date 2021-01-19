@@ -1,6 +1,8 @@
 /client
 /migrations
-/node_modules
+/node_modules/*
+!node_modules/@openzeppelin/
+
 /test
 /.env
 /.gitattributes

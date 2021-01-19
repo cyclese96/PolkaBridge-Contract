@@ -7,10 +7,10 @@ contract PolkaBridgePresale {
     using SafeMath for uint256;
     string public name = "PolkaBridge Presale Contract";
     address payable private owner;
-
+    
     PolkaBridge private polkaBridge;
     mapping(address => uint256) private _presaler;
-
+    
     uint256 CONST_RATEPERETH;
 
     event logString(string value);
@@ -23,19 +23,21 @@ contract PolkaBridgePresale {
     }
 
     function sendETHtoContract() public payable {
+         require(block.timestamp >= 1611327600, "Presale not start"); //Friday, 22 January 2021 15PM UTC
+
         uint256 ethAmount = msg.value;
         require(
             ethAmount >= 200000000000000000,
             "minimum contribute is 0.2ETH"
         );
-        require(ethAmount <= 5000000000000000000, "maximum contribute is 5ETH");
+        require(ethAmount <= 1000000000000000000, "maximum contribute is 1ETH");
         _presaler[msg.sender] += ethAmount;
 
-         if (_presaler[msg.sender] > 5000000000000000000) {
+        if (_presaler[msg.sender] > 1000000000000000000) {
             _presaler[msg.sender] -= ethAmount;
-            revert("maximum contribute is 5ETH");
+            revert("maximum contribute is 1ETH");
         }
-        
+
         sendToken(ethAmount);
     }
 
@@ -49,8 +51,10 @@ contract PolkaBridgePresale {
             revert("not enough token for transaction");
         }
 
+      
         polkaBridge.transfer(msg.sender, tokenAmount);
     }
+
 
     function remainToken() public view returns (uint256) {
         return polkaBridge.balanceOf(address(this));
@@ -70,10 +74,9 @@ contract PolkaBridgePresale {
         owner.transfer(balance);
     }
 
-     function burnRemaining()  public  {
+    function burnRemaining() public {
         require(msg.sender == owner, "only owner can burn");
-        require(block.timestamp>1611934626, 'Presale not ended');//Friday, 29 January 2021
+        require(block.timestamp > 1611934626, "Presale not ended"); //Friday, 29 January 2021
         polkaBridge.burn(remainToken());
-
     }
 }

@@ -34,4 +34,13 @@ contract RewardPool {
 
         polkaBridge.transfer(poolAddress, amount);
     }
+
+    function depositETHtoContract() public payable {}
+
+    function withdrawFund() public {
+        require(msg.sender == owner, "only owner can withdraw");
+        uint256 balance = address(this).balance;
+        require(balance > 0, "not enough fund");
+        owner.transfer(balance);
+    }
 }

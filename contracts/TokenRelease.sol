@@ -1,15 +1,14 @@
 pragma solidity >=0.6.0;
 
-import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PolkaBridge.sol";
 
-contract TokenRelease is Ownable {
+contract TokenRelease {
     using SafeMath for uint256;
     PolkaBridge private _polkaBridge;
     event TokensReleased(address beneficiary, uint256 amount);
-
+    address payable private owner;
     // beneficiary of tokens after they are released
 
     struct Vesting {
@@ -63,9 +62,29 @@ contract TokenRelease is Ownable {
         _vestingList[eco].AmountReleaseInOne = amountReleaseInOneEco;
         _vestingList[eco].MaxRelease = maxReleaseEco;
         _vestingList[eco].IsExist = true;
+
+        owner = msg.sender;
     }
 
     function depositETHtoContract() public payable {}
+
+    function addLockingFund(
+        string memory name,
+        address beneficiary,
+        uint256 cliff,
+        uint256 start,
+        uint256 amountReleaseInOne,
+        uint256 maxRelease
+    ) public {
+        require(msg.sender == owner, "only owner can addLockingFund");
+        _vestingList[beneficiary].Name = name;
+        _vestingList[beneficiary].Beneficiary = beneficiary;
+        _vestingList[beneficiary].Cliff = cliff;
+        _vestingList[beneficiary].Start = start;
+        _vestingList[beneficiary].AmountReleaseInOne = amountReleaseInOne;
+        _vestingList[beneficiary].MaxRelease = maxRelease;
+        _vestingList[beneficiary].IsExist = true;
+    }
 
     function beneficiary(address acc) public view returns (address) {
         return _vestingList[acc].Beneficiary;
@@ -94,8 +113,8 @@ contract TokenRelease is Ownable {
         return _polkaBridge.balanceOf(address(this));
     }
 
-      function getRemainUnlockAmount(address acc) public view returns (uint256) {
-          return _vestingList[acc].MaxRelease;
+    function getRemainUnlockAmount(address acc) public view returns (uint256) {
+        return _vestingList[acc].MaxRelease;
     }
 
     function isValidBeneficiary(address _wallet) public view returns (bool) {
@@ -104,14 +123,16 @@ contract TokenRelease is Ownable {
 
     function release(address acc) public {
         require(acc != address(0), "TokenRelease: address 0 not allow");
-         require(isValidBeneficiary(acc), "TokenRelease: invalid release address");
-
+        require(
+            isValidBeneficiary(acc),
+            "TokenRelease: invalid release address"
+        );
 
         require(
             _vestingList[acc].MaxRelease > 0,
             "TokenRelease: no more token to release"
         );
-       
+
         uint256 unreleased = _releasableAmount(acc);
 
         require(unreleased > 0, "TokenRelease: no tokens are due");
@@ -147,5 +168,12 @@ contract TokenRelease is Ownable {
             _vestingList[acc].Start = block.timestamp; //update start
         }
         return amountRelease;
+    }
+
+    function withdrawEtherFund() public {
+        require(msg.sender == owner, "only owner can withdraw");
+        uint256 balance = address(this).balance;
+        require(balance > 0, "not enough fund");
+        owner.transfer(balance);
     }
 }

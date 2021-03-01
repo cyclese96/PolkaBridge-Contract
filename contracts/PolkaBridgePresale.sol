@@ -10,13 +10,15 @@ contract PolkaBridgePresale {
 
     PolkaBridge private polkaBridge;
     mapping(address => uint256) private _presaler;
-    mapping(address => bool) whitelist;
+    mapping(address => bool) private whitelist;
+    mapping(address => bool) private specialWhitelist;
 
-    uint256 CONST_RATEPERETH;
-    uint256 BeginDate;
-    uint256 EndDate;
-    uint256 MinAllocation;
-    uint256 MaxAllocation;
+    uint256 private CONST_RATEPERETH;
+    uint256 private BeginDate;
+    uint256 private EndDate;
+    uint256 private SpecialDate;
+    uint256 private MinAllocation;
+    uint256 private MaxAllocation;
 
     event logString(string value);
 
@@ -25,32 +27,43 @@ contract PolkaBridgePresale {
         owner = msg.sender;
 
         CONST_RATEPERETH = 100000;
-        BeginDate = 1611327600; //Friday, 22 January 2021 15PM UTC
-        EndDate = 1611934626; //Friday, 29 January 2021
+        BeginDate = 1611324000; //01/22/2021 @ 2:00pm (UTC) 1611324000
+        EndDate = 1611928800; //01/29/2021 @ 2:00pm (UTC)
         MinAllocation = 200000000000000000; //0.2eth
-        MaxAllocation = 1000000000000000000; //1eth
-
-        //init whitelist
+        MaxAllocation = 2000000000000000000; //1eth
+        SpecialDate = 1611324600; //01/22/2021 @ 2:10pm (UTC) 1611324600
         whitelist[owner] = true;
-        whitelist[0x59f5836DAe9977A5124C022C4B6F9b8d3f5d61DA] = true;
-        whitelist[0x778c5DCfA5082989868B969858963Fa3F697D847] = true;
     }
 
     function sendETHtoContract() public payable {
-        //require(block.timestamp >= BeginDate, "Presale not start");
-        require(isWhitelisted(msg.sender), "You are not in whitelist");
-
+        //special whitelist
+        require(block.timestamp >= BeginDate, "Presale not start");
+        uint256 remainToken = remainToken();
         uint256 ethAmount = msg.value;
         require(ethAmount >= MinAllocation, "minimum contribute is 0.2ETH");
-        require(ethAmount <= MaxAllocation, "maximum contribute is 1ETH");
+        require(ethAmount <= MaxAllocation, "maximum contribute is 2ETH");
         _presaler[msg.sender] += ethAmount;
-
         if (_presaler[msg.sender] > MaxAllocation) {
             _presaler[msg.sender] -= ethAmount;
-            revert("maximum contribute is 1ETH");
+            revert("maximum contribute is 2ETH");
         }
+        
 
-        sendToken(ethAmount);
+        if (
+            block.timestamp >= BeginDate &&
+            block.timestamp <= SpecialDate &&
+            remainToken <= 5500000000000000000000000
+        ) {
+            require(specialWhitelist[msg.sender], "Not allow");
+
+            sendToken(ethAmount);
+        } else {
+            require(
+                whitelist[msg.sender] || specialWhitelist[msg.sender],
+                "You are not in whitelist"
+            );
+            sendToken(ethAmount);
+        }
     }
 
     function sendToken(uint256 ethAmount) public {
@@ -75,13 +88,41 @@ contract PolkaBridgePresale {
         whitelist[add] = true;
     }
 
+    function addMultiWhitelist(address[] memory users) public {
+        require(msg.sender == owner, "only owner can add specialWhitelist");
+        for (uint256 i = 0; i < users.length; i++) {
+            whitelist[users[i]] = true;
+        }
+    }
+
     function removeWhitelist(address add) public {
         require(msg.sender == owner, "only owner can add whitelist");
         whitelist[add] = false;
     }
 
+    function addSpecialWhitelist(address add) public {
+        require(msg.sender == owner, "only owner can add specialWhitelist");
+        specialWhitelist[add] = true;
+    }
+
+    function addMultiSpecialWhitelist(address[] memory users) public {
+        require(msg.sender == owner, "only owner can add specialWhitelist");
+        for (uint256 i = 0; i < users.length; i++) {
+            specialWhitelist[users[i]] = true;
+        }
+    }
+
+    function removeSpecialWhitelist(address add) public {
+        require(msg.sender == owner, "only owner can add specialWhitelist");
+        specialWhitelist[add] = false;
+    }
+
     function isWhitelisted(address add) public view returns (bool) {
         return whitelist[add];
+    }
+
+     function isSpecialWhitelisted(address add) public view returns (bool) {
+        return specialWhitelist[add];
     }
 
     function withdrawFund() public {

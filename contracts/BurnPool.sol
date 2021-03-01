@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract BurnPool {
     using SafeMath for uint256;
-    string public name = "BurnPool Contract";
+    string public name = "PolkaBridge: BurnPool";
     address payable private owner;
 
     PolkaBridge private polkaBridge;

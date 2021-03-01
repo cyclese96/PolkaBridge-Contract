@@ -40,7 +40,7 @@ contract TokenRelease {
         _vestingList[team].Name = "Team Fund";
         _vestingList[team].Beneficiary = team;
         _vestingList[team].Cliff = cliffTeam;
-        _vestingList[team].Start = block.timestamp;
+        _vestingList[team].Start = 1611248400;//22 jan 2021
         _vestingList[team].AmountReleaseInOne = amountReleaseInOneTeam;
         _vestingList[team].MaxRelease = maxReleaseTeam;
         _vestingList[team].IsExist = true;
@@ -48,7 +48,7 @@ contract TokenRelease {
         _vestingList[marketing].Name = "Marketing Fund";
         _vestingList[marketing].Beneficiary = marketing;
         _vestingList[marketing].Cliff = cliffMarketing;
-        _vestingList[marketing].Start = block.timestamp;
+        _vestingList[marketing].Start = 1613926800;//22 Feb 2021
         _vestingList[marketing]
             .AmountReleaseInOne = amountReleaseInOneMarketing;
         _vestingList[marketing].MaxRelease = maxReleaseMarketing;
@@ -57,7 +57,7 @@ contract TokenRelease {
         _vestingList[eco].Name = "Ecosystem Fund";
         _vestingList[eco].Beneficiary = eco;
         _vestingList[eco].Cliff = cliffEco;
-        _vestingList[eco].Start = block.timestamp;
+        _vestingList[eco].Start = 1613926800;//22 Feb 2021
         _vestingList[eco].AmountReleaseInOne = amountReleaseInOneEco;
         _vestingList[eco].MaxRelease = maxReleaseEco;
         _vestingList[eco].IsExist = true;

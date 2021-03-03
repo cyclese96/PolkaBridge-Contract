@@ -9,6 +9,7 @@ contract TokenRelease {
     event TokensReleased(address beneficiary, uint256 amount);
     address payable private owner;
     // beneficiary of tokens after they are released
+    string public name = "PolkaBridge: Token Vesting";
 
     struct Vesting {
         string Name;

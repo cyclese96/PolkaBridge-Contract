@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract SwapToken {
     using SafeMath for uint256;
-    string public name = "PolkaBridge: Swap from PBR to POBR";
+    string public name = "PolkaBridge: Swap from old PBR to new PBR";
     address payable private owner;
 
     address oldPBRAddress;
@@ -20,18 +20,12 @@ contract SwapToken {
         owner = msg.sender;
     }
 
-   
-
-    function swapPBRToPOBR(uint256 amount) public {
+    function swapOldPBRToNewPBR(uint256 amount) public {
         require(amount > 0, "amount must to > 0");
         require(amount <= tokenContractBalance(), "exceeds amount limit");
-        require(
-            amount <= oldTokenBalance(msg.sender),
-            "not enough balance"
-        );
+        require(amount <= oldTokenBalance(msg.sender), "not enough balance");
 
-        
-        ERC20Burnable(oldPBRAddress).burnFrom(msg.sender,amount);
+        ERC20Burnable(oldPBRAddress).burnFrom(msg.sender, amount);
         //send new POBR token
         polkaBridge.transfer(msg.sender, amount);
     }
@@ -44,7 +38,7 @@ contract SwapToken {
         return ERC20Burnable(oldPBRAddress).balanceOf(add);
     }
 
-      function oldTokenAddress() public view returns (address) {
+    function oldTokenAddress() public view returns (address) {
         return oldPBRAddress;
     }
 

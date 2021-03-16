@@ -9,7 +9,7 @@ contract PolkaBridge is ERC20, ERC20Detailed, ERC20Burnable {
         public
         ERC20Detailed("PolkaBridge", "PBR", 18)
     {
-        _deploy(msg.sender, initialSupply, 1615766400); //15 Mar 2021 1615766400
+        _deploy(msg.sender, initialSupply, 1616630400); //25 Mar 2021 1616630400
     }
 
     //withdraw contract token

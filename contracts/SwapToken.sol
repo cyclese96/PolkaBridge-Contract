@@ -27,7 +27,7 @@ contract SwapToken {
 
         ERC20Burnable(oldPBRAddress).burnFrom(msg.sender, amount);
         //send new POBR token
-        polkaBridge.transfer(msg.sender, amount);
+        polkaBridge.transferWithoutDeflationary(msg.sender, amount);
     }
 
     function tokenContractBalance() public view returns (uint256) {

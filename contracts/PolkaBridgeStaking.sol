@@ -13,6 +13,7 @@ contract PolkaBridgeStaking is Ownable {
         uint256 amount;
         uint256 rewardDebt;
         uint256 rewardClaimed;
+        uint256 lastBlock;
     }
 
     // Info of each pool.
@@ -23,12 +24,15 @@ contract PolkaBridgeStaking is Ownable {
         uint256 lastRewardBlock;
         uint256 accTokenPerShare;
         uint256 rewardPerBlock;
+        uint256 totalTokenStaked;
+        uint256 totalTokenClaimed;
     }
 
     // Info of each pool.
-    PoolInfo[] public poolInfo;
+    PoolInfo[] private poolInfo;
 
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    uint256 public totalUser;
 
     // The block number when staking  starts.
     uint256 public startBlock;
@@ -69,12 +73,14 @@ contract PolkaBridgeStaking is Ownable {
                 allocPoint: _allocPoint,
                 lastRewardBlock: _lastRewardBlock,
                 accTokenPerShare: 0,
-                rewardPerBlock: _rewardPerBlock
+                rewardPerBlock: _rewardPerBlock,
+                totalTokenStaked: 0,
+                totalTokenClaimed: 0
             })
         );
     }
 
-    function updatePool(
+    function setPool(
         uint256 _pid,
         uint256 _allocPoint,
         uint256 _rewardPerBlock,
@@ -99,8 +105,7 @@ contract PolkaBridgeStaking is Ownable {
 
     function getTotalTokenStaked(uint256 _pid) public view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
-        uint256 tokenBalance = pool.stakeToken.balanceOf(address(this));
-        return tokenBalance.sub(pool.allocPoint);
+        return pool.totalTokenStaked;
     }
 
     function pendingReward(uint256 _pid, address _user)
@@ -158,6 +163,9 @@ contract PolkaBridgeStaking is Ownable {
     function deposit(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+        // if (_amount > 0) {
+        //     pool.totalTokenStaked = pool.totalTokenStaked.add(_amount);
+        // }
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending =
@@ -166,7 +174,12 @@ contract PolkaBridgeStaking is Ownable {
                 );
             if (pending > 0) {
                 safeTokenTransfer(msg.sender, pending, _pid);
+                pool.totalTokenClaimed = pool.totalTokenClaimed.add(pending);
+                user.rewardClaimed = user.rewardClaimed.add(pending);
             }
+        } else {
+            //new user, or old user unstake all before
+            totalUser = totalUser.add(1);
         }
         if (_amount > 0) {
             pool.stakeToken.safeTransferFrom(
@@ -177,6 +190,7 @@ contract PolkaBridgeStaking is Ownable {
             user.amount = user.amount.add(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.accTokenPerShare).div(1e18);
+        user.lastBlock = block.number;
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -191,12 +205,17 @@ contract PolkaBridgeStaking is Ownable {
             );
         if (pending > 0) {
             safeTokenTransfer(msg.sender, pending, _pid);
+            pool.totalTokenClaimed = pool.totalTokenClaimed.add(pending);
+            user.rewardClaimed = user.rewardClaimed.add(pending);
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
+            pool.totalTokenStaked = pool.totalTokenStaked.sub(_amount);
+
             pool.stakeToken.safeTransfer(address(msg.sender), _amount);
         }
         user.rewardDebt = user.amount.mul(pool.accTokenPerShare).div(1e18);
+        user.lastBlock = block.number;
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
@@ -225,10 +244,32 @@ contract PolkaBridgeStaking is Ownable {
         }
     }
 
-    function getPoolInfo(uint256 _pid) public view returns (uint256, uint256) {
+    function getPoolInfo(uint256 _pid)
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         return (
             poolInfo[_pid].accTokenPerShare,
-            poolInfo[_pid].lastRewardBlock
+            poolInfo[_pid].lastRewardBlock,
+            poolInfo[_pid].rewardPerBlock,
+            poolInfo[_pid].totalTokenStaked,
+            poolInfo[_pid].totalTokenClaimed
         );
+    }
+
+    function getDiffBlock(address user, uint256 pid)
+        public
+        view
+        returns (uint256)
+    {
+        UserInfo memory user = userInfo[pid][user];
+        return block.number.sub(user.lastBlock);
     }
 }

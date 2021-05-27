@@ -27,6 +27,15 @@ contract DistributeToken is Ownable {
         }
     }
 
+    function distributeToken(address[] memory listUser, uint256 amount)
+        public
+        onlyOwner
+    {
+        for (uint256 i = 0; i < listUser.length; i++) {
+            token.transfer(listUser[i], amount);
+        }
+    }
+
     function withdrawToken() public {
         token.transfer(owner(), token.balanceOf(address(this)));
     }

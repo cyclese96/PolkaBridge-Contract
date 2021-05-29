@@ -14,6 +14,8 @@ contract PolkaBridgeStaking is Ownable {
         uint256 rewardDebt;
         uint256 rewardClaimed;
         uint256 lastBlock;
+        uint256 beginTime;
+        uint256 endTime;
     }
 
     // Info of each pool.
@@ -26,6 +28,7 @@ contract PolkaBridgeStaking is Ownable {
         uint256 rewardPerBlock;
         uint256 totalTokenStaked;
         uint256 totalTokenClaimed;
+        uint256 endDate;
     }
 
     // Info of each pool.
@@ -58,6 +61,7 @@ contract PolkaBridgeStaking is Ownable {
         IERC20 _stakeToken,
         IERC20 _rewardToken,
         uint256 _rewardPerBlock,
+        uint256 _endDate,
         bool _withUpdate
     ) public onlyOwner {
         if (_withUpdate) {
@@ -75,7 +79,8 @@ contract PolkaBridgeStaking is Ownable {
                 accTokenPerShare: 0,
                 rewardPerBlock: _rewardPerBlock,
                 totalTokenStaked: 0,
-                totalTokenClaimed: 0
+                totalTokenClaimed: 0,
+                endDate: _endDate
             })
         );
     }
@@ -84,14 +89,21 @@ contract PolkaBridgeStaking is Ownable {
         uint256 _pid,
         uint256 _allocPoint,
         uint256 _rewardPerBlock,
+        uint256 _endDate,
         bool _withUpdate
     ) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
-
-        poolInfo[_pid].allocPoint = _allocPoint;
-        poolInfo[_pid].rewardPerBlock = _rewardPerBlock;
+        if (_allocPoint > 0) {
+            poolInfo[_pid].allocPoint = _allocPoint;
+        }
+        if (_rewardPerBlock > 0) {
+            poolInfo[_pid].rewardPerBlock = _rewardPerBlock;
+        }
+        if (_endDate > 0) {
+            poolInfo[_pid].endDate = _endDate;
+        }
     }
 
     // Return reward multiplier over the given _from to _to block.
@@ -163,10 +175,10 @@ contract PolkaBridgeStaking is Ownable {
     function deposit(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        // if (_amount > 0) {
-        //     pool.totalTokenStaked = pool.totalTokenStaked.add(_amount);
-        // }
+        require(block.timestamp < pool.endDate, "staking pool already closed");
+
         updatePool(_pid);
+
         if (user.amount > 0) {
             uint256 pending =
                 user.amount.mul(pool.accTokenPerShare).div(1e18).sub(
@@ -180,6 +192,8 @@ contract PolkaBridgeStaking is Ownable {
         } else {
             //new user, or old user unstake all before
             totalUser = totalUser.add(1);
+            user.beginTime = block.timestamp;
+            user.endTime = 0; //reset endtime
         }
         if (_amount > 0) {
             pool.stakeToken.safeTransferFrom(
@@ -210,6 +224,9 @@ contract PolkaBridgeStaking is Ownable {
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
+            if (user.amount == 0) {
+                user.endTime = block.timestamp;
+            }
             pool.totalTokenStaked = pool.totalTokenStaked.sub(_amount);
 
             pool.stakeToken.safeTransfer(address(msg.sender), _amount);
